@@ -24,7 +24,6 @@ export const LoginPage = () => {
     
     const  loginForm = (event) =>{
         event.preventDefault()
-        console.log('login',{loginEmail,loginPassword});
         startLogin({email:loginEmail,password:loginPassword})
     } 
     const registerForm = (event) => {

@@ -1,11 +1,14 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { onAddNewEvent, onDeleteEvent, onSetActiveEvent, onUpdateEvent } from '../store';
+import { onAddNewEvent, onDeleteEvent, onSetActiveEvent, onUpdateEvent, onUpdateEvents } from '../store';
+import calendarApi from '../api/calendarApi';
+import { convertEventDates } from '../helpers/convertEventDates';
 
 
 export const useCalendarStore = () => {
   
     const dispatch = useDispatch();
     const { events, activeEvent } = useSelector( state => state.calendar );
+    const { user } = useSelector( state => state.auth );
 
     const setActiveEvent = ( calendarEvent ) => {
         dispatch( onSetActiveEvent( calendarEvent ) )
@@ -15,22 +18,33 @@ export const useCalendarStore = () => {
         // TODO: llegar al backend
 
         // Todo bien
-        if( calendarEvent._id ) {
+        if( calendarEvent.id ) {
             // Actualizando
-            dispatch( onUpdateEvent({ ...calendarEvent }) );
+            try {
+                const { data } = await calendarApi.put(`/events/${calendarEvent.id}`,calendarEvent) 
+
+            } catch (error) {
+                console.log(error);
+            }
+            dispatch( onUpdateEvent({ ...calendarEvent,user }) );
         } else {
             // Creando
-            dispatch( onAddNewEvent({ ...calendarEvent, _id: new Date().getTime() }) );
+            const { data } = await calendarApi.post('/events',calendarEvent)
+            dispatch( onAddNewEvent({ ...calendarEvent, id: data.event.id, user }) );
         }
     }
 
-    const startDeletingEvent = () => {
+    const startDeletingEvent = async () => {
         // Todo: Llegar al backend
 
-
+        const { data } = await calendarApi.delete(`/events/${activeEvent.id}`)
         dispatch( onDeleteEvent() );
     }
-
+    const startLoadingEvents = async () => {
+        const {data} = await calendarApi.get('/events')
+        
+        dispatch(onUpdateEvents(convertEventDates(data.events)))
+    }
 
     return {
         //* Propiedades
@@ -42,5 +56,6 @@ export const useCalendarStore = () => {
         startDeletingEvent,
         setActiveEvent,
         startSavingEvent,
+        startLoadingEvents
     }
 }
